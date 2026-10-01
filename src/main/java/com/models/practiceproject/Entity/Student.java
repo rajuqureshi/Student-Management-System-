@@ -69,4 +69,7 @@ public class Student {
     private List<Course> courses = new ArrayList<>();
 
     private boolean isDeleted = false;
+
+    @Column(name = "file_name")
+    private String fileName;
 }

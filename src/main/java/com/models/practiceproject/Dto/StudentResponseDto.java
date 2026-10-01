@@ -28,5 +28,6 @@ public class StudentResponseDto {
     private LocalDateTime updatedAt;
     private String createdBy;
     private String updatedBy;
+    private String fileName;
 
 }

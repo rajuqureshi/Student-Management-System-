@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,4 +40,5 @@ public interface StudentService {
 
     List<StudentProjectionDto> getAllStudentProjectionsDto();
     public List<StudentResponseDto> searchStudent(String firstName,String email,String courses);
+    public StudentResponseDto uploadProfileImage(Long id, MultipartFile file);
 }

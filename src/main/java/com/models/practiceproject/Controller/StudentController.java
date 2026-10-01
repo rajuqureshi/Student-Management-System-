@@ -17,8 +17,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -241,6 +243,7 @@ public class StudentController {
     }
 
 //    using Specification class and filtering data by entering multiple field at a time
+
     @GetMapping("/search/specification")
     public ResponseEntity<ApiResponse<List<StudentResponseDto>>> searchStudent(
             @RequestParam(required = false) String firstName,
@@ -256,5 +259,13 @@ public class StudentController {
                 students
         );
         return ResponseEntity.ok(apiResponse);
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @PostMapping(value = "/{id}/image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<StudentResponseDto> uploadProfileImage(
+            @PathVariable Long id, @RequestParam("file") MultipartFile profileImage){
+        return ResponseEntity.ok(studentService.uploadProfileImage(id, profileImage));
     }
 }

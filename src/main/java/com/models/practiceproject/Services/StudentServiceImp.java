@@ -13,6 +13,7 @@ import com.models.practiceproject.Repositories.CourseRepository;
 import com.models.practiceproject.Repositories.DepartmentRepository;
 import com.models.practiceproject.Repositories.StudentRepository;
 import com.models.practiceproject.specification.StudentSpecification;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,14 +36,17 @@ public class StudentServiceImp implements StudentService {
     private DepartmentRepository departmentRepository;
     private CourseRepository courseRepository;
     private PasswordEncoder passwordEncoder;
+    private FileStorageService fileStorageService;
     public StudentServiceImp(StudentRepository studentRepository,
                              DepartmentRepository departmentRepository,
                              CourseRepository courseRepository,
-                             PasswordEncoder passwordEncoder) {
+                             PasswordEncoder passwordEncoder,
+                             FileStorageService fileStorageService) {
         this.studentRepository = studentRepository;
         this.departmentRepository = departmentRepository;
         this.courseRepository = courseRepository;
         this.passwordEncoder =  passwordEncoder;
+        this.fileStorageService = fileStorageService;
     }
 
     @Transactional
@@ -236,6 +241,65 @@ public class StudentServiceImp implements StudentService {
         return students.map(this::mapToDto);
     }
 
+
+//    Dyanamic Sorting using pageable interface
+    public Page<StudentResponseDto> getStudents(Pageable pageable){
+        Page<Student> students = studentRepository.findAll(pageable);
+        return students.map(this::mapToDto);
+    }
+
+    @Override
+    public List<ProjectionResponse> getAllStudentsByProjections() {
+        return studentRepository.findBy();
+    }
+
+    @Override
+    public List<StudentProjectionDto> getAllStudentProjectionsDto() {
+        return studentRepository.getStudentProjection();
+    }
+
+
+
+//    using Specification class and filtering data by entering multiple field at a time
+    @Override
+    public List<StudentResponseDto> searchStudent(String firstName, String email,String courses) {
+        Specification<Student> specification = Specification.allOf(
+                StudentSpecification.byFirstName(firstName),
+                StudentSpecification.byEmail(email),
+                StudentSpecification.byCourses(courses));
+        List<Student> students = studentRepository.findAll(specification);
+        return students.stream().map(this::mapToDto).toList();
+    }
+
+//    File upload service method
+    @Transactional
+    @Override
+    public StudentResponseDto uploadProfileImage(Long id, MultipartFile file) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(()->
+                        new StudentNotFoundException("Student not found with id " + id));
+//        Validation performing
+        if (file.isEmpty()) {
+            throw new IllegalStateException("File should not be  empty");
+        }
+
+        if (!"image/jpeg".equals(file.getContentType()) && !"image/png".equals(file.getContentType())) {
+            throw new IllegalStateException("Only JPG and PNG file allow to upload ");
+        }
+
+        if (file.getSize()>5*1024*1024){
+            throw new IllegalArgumentException("File size must be less than 5MB");
+        }
+        try {
+            String fileName = fileStorageService.storeFile(file);
+            student.setFileName(fileName);
+            Student updatedStudent = studentRepository.save(student);
+            return mapToDto(updatedStudent);
+        } catch (Exception e){
+            throw new RuntimeException("file failed to upload");
+        }
+    }
+
     private Student mapToEntity(StudentRequestDto studentReqDto) {
         Address address = new Address();
         address.setStreet(studentReqDto.getAddress().getStreet());
@@ -271,6 +335,7 @@ public class StudentServiceImp implements StudentService {
         studentResponseDto.setFirstName(student.getFirstName());
         studentResponseDto.setLastName(student.getLastName());
         studentResponseDto.setEmail(student.getEmail());
+        studentResponseDto.setFileName(student.getFileName());
         studentResponseDto.setAge(student.getAge());
         studentResponseDto.setCreatedAt(student.getCreatedAt());
         studentResponseDto.setUpdatedAt(student.getUpdatedAt());
@@ -311,34 +376,6 @@ public class StudentServiceImp implements StudentService {
         );
         studentResponseDto.setMessage("Your response has been ready");
         return studentResponseDto;
-    }
-
-//    Dyanamic Sorting using pageable interface
-    public Page<StudentResponseDto> getStudents(Pageable pageable){
-        Page<Student> students = studentRepository.findAll(pageable);
-        return students.map(this::mapToDto);
-    }
-
-    @Override
-    public List<ProjectionResponse> getAllStudentsByProjections() {
-        return studentRepository.findBy();
-    }
-
-    @Override
-    public List<StudentProjectionDto> getAllStudentProjectionsDto() {
-        return studentRepository.getStudentProjection();
-    }
-
-
-//    using Specification class and filtering data by entering multiple field at a time
-    @Override
-    public List<StudentResponseDto> searchStudent(String firstName, String email,String courses) {
-        Specification<Student> specification = Specification.allOf(
-                StudentSpecification.byFirstName(firstName),
-                StudentSpecification.byEmail(email),
-                StudentSpecification.byCourses(courses));
-        List<Student> students = studentRepository.findAll(specification);
-        return students.stream().map(this::mapToDto).toList();
     }
 
 }
