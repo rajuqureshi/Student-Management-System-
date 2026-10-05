@@ -1,5 +1,6 @@
 package com.models.practiceproject.Controller;
 
+import com.models.practiceproject.Dto.LoginResponse;
 import com.models.practiceproject.Dto.StudentProjectionDto;
 import com.models.practiceproject.Dto.StudentRequestDto;
 import com.models.practiceproject.Dto.StudentResponseDto;
@@ -13,9 +14,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("api/students")
 @Tag(
@@ -261,11 +265,53 @@ public class StudentController {
         return ResponseEntity.ok(apiResponse);
     }
 
+//    Upload a image code
+@Operation(
+        summary = "Upload student profile image ,",
+        description = "Upload student profile image using this method and spring security "
+)
+@ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200",
+                description = "This is a response code of profile downloaded succssfully"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "404",
+                description = "student not found with this id or profile"
+        )
+})
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping(value = "/{id}/image",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<StudentResponseDto> uploadProfileImage(
             @PathVariable Long id, @RequestParam("file") MultipartFile profileImage){
         return ResponseEntity.ok(studentService.uploadProfileImage(id, profileImage));
+    }
+
+//    Download a image from resource code
+
+    @Operation(
+            summary = "Download student profile image ,",
+            description = "Download student profile image using this method and spring security "
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "This is a response code of profile downloaded succssfully"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "student not found with this id or profile"
+            )
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/{id}/image")
+    public ResponseEntity<Resource> downloadProfileImage(@PathVariable Long id){
+        Resource resource = studentService.downloadFileImage(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=" + resource.getFilename())
+                .body(resource);
     }
 }

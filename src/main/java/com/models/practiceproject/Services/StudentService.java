@@ -6,6 +6,7 @@ import com.models.practiceproject.Dto.StudentResponseDto;
 import com.models.practiceproject.Entity.Student;
 import com.models.practiceproject.Projection.ProjectionResponse;
 import jakarta.transaction.Transactional;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -39,6 +40,10 @@ public interface StudentService {
     List<ProjectionResponse> getAllStudentsByProjections();
 
     List<StudentProjectionDto> getAllStudentProjectionsDto();
-    public List<StudentResponseDto> searchStudent(String firstName,String email,String courses);
-    public StudentResponseDto uploadProfileImage(Long id, MultipartFile file);
+
+    List<StudentResponseDto> searchStudent(String firstName,String email,String courses);
+
+    StudentResponseDto uploadProfileImage(Long id, MultipartFile file);
+
+    Resource downloadFileImage(Long id);
 }

@@ -13,8 +13,9 @@ import com.models.practiceproject.Repositories.CourseRepository;
 import com.models.practiceproject.Repositories.DepartmentRepository;
 import com.models.practiceproject.Repositories.StudentRepository;
 import com.models.practiceproject.specification.StudentSpecification;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,9 +24,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,6 +62,7 @@ public class StudentServiceImp implements StudentService {
         return mapToDto(studentSave);
     }
 
+    @Cacheable(value = "students",key = "#id")
     @Override
     public StudentResponseDto getById(Long id) {
         log.debug("Fetching student with {} id ",id);
@@ -297,6 +299,23 @@ public class StudentServiceImp implements StudentService {
             return mapToDto(updatedStudent);
         } catch (Exception e){
             throw new RuntimeException("file failed to upload");
+        }
+    }
+
+    @Override
+    public Resource downloadFileImage(Long id){
+        Student student  = studentRepository.findById(id)
+                .orElseThrow(()->
+                        new StudentNotFoundException("student not found with id " + id));
+        String fileName = student.getFileName();
+        if (fileName == null || fileName.isBlank()) {
+            throw new ResourceNotFoundException("student not found with id " + id);
+        }
+
+        try{
+            return fileStorageService.loadFileAsResource(fileName);
+        } catch (IOException e){
+            throw new ResourceNotFoundException("student not found with id " + id);
         }
     }
 

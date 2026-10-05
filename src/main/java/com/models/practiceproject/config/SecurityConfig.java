@@ -49,7 +49,10 @@ public class SecurityConfig{
                                  ).permitAll()
 
                                  .requestMatchers("/api/auth/login"
-                                         ,"/api/auth/refresh","/api/auth/logout")
+                                         ,"/api/auth/refresh",
+                                         "/api/auth/logout",
+                                         "/auth/otp/send",
+                                         "/auth/otp/verify")
                                  .permitAll()
 //                                 .requestMatchers("/api/auth/refresh")
 //                                 .permitAll()
