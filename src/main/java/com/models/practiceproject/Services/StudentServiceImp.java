@@ -14,6 +14,8 @@ import com.models.practiceproject.Repositories.DepartmentRepository;
 import com.models.practiceproject.Repositories.StudentRepository;
 import com.models.practiceproject.specification.StudentSpecification;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -101,6 +103,7 @@ public class StudentServiceImp implements StudentService {
         return students;
     }
 
+    @CachePut(value = "students",key = "#id")
     @Override
     public StudentResponseDto updateStudent(StudentRequestDto studentRequestDto,Long id) {
         Student existingStudent = studentRepository.findById(id)
@@ -125,6 +128,7 @@ public class StudentServiceImp implements StudentService {
         return mapToDto(updatedStudent);
     }
 
+    @CacheEvict(value = "students",key = "#id")
     @Override
     public StudentResponseDto deleteStudent(Long id) {
         Optional<Student> studentOptional = studentRepository.findById(id);
