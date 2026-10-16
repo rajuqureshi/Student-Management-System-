@@ -1,0 +1,58 @@
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: student-management-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: userinformation
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8001:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: student-management-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    image: student-management-system-app
+    container_name: student-management-system-container
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: jdbc:mysql://host.docker.internal:3306/userinformation
+      DATABASE_USERNAME: ${DB_USERNAME}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      DB_URL: jdbc:mysql://host.docker.internal:3306/userinformation?allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASS: ${MAIL_PASS}
+    volumes:
+      - "./uploads:/app/uploads"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
